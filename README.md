@@ -1,1 +1,837 @@
-# test
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>庫存記錄表（安全備份EXCEL）</title>
+  <style>
+    body { font-family: "Microsoft JhengHei", Arial, sans-serif; background: #f2f2f2; margin:0; }
+    .container { max-width: 1120px; margin: 30px auto; background: #fff; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.08); padding: 30px 15px 20px 15px; }
+    h1 { text-align: center; color: #333; margin-bottom: 18px; }
+    .flex-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; align-items: flex-end; }
+    .flex-col { flex: 1 1 120px; min-width: 120px; }
+    label { display: block; margin-bottom: 3px; font-size: 0.99em; color: #333; }
+    input, select, button, textarea { width: 100%; padding: 7px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
+    button { background: #27ae60; color: white; border: none; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #219150; }
+    table { width: 100%; border-collapse: collapse; background: #fafafa; margin-bottom: 10px; }
+    th, td { border: 1px solid #e0e0e0; padding: 8px 6px; text-align: center; font-size: 0.98em; }
+    th { background: #eafaf1; font-weight: bold; }
+    .danger { background: #ffeded !important; color: #d63031 !important; font-weight: bold; }
+    .warn { background: #fff3cd !important; color: #d48400 !important; font-weight: bold;}
+    .remove-btn { background: #c0392b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+    .remove-btn:hover { background: #a93226; }
+    .tab-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+    .tab-btn { flex: 1 1 80px; background: #d4efdf; color: #145a32; border: 1px solid #bbb; border-radius: 7px 7px 0 0; padding: 8px 0; font-size: 1.02em; font-weight: 600; cursor: pointer; }
+    .tab-btn.active { background: #27ae60; color: #fff; border-bottom: 2px solid #27ae60; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .export-btn { background: #2874a6; color: white; border: none; padding: 7px 20px; border-radius: 5px; font-weight: 600; margin-bottom: 14px; }
+    .export-btn:hover { background: #145a32; }
+    .import-btn { background: #ffb300; color: white; border: none; padding: 7px 20px; border-radius: 5px; font-weight: 600; margin-left:8px; margin-bottom:14px;}
+    .import-btn.merge { background: #1976d2;}
+    .import-btn.merge:hover { background: #1350a3;}
+    .import-btn:hover { background: #f57c00; }
+    .link { color: #2874a6; cursor: pointer; text-decoration: underline; }
+    .close-filter-btn { background: #eee; color: #888; border: none; border-radius: 4px; margin-left: 10px; padding: 3px 10px; cursor: pointer; font-size: 0.97em;}
+    .batch-btn { background: #ffa726; color:#fff; margin-top:21px; }
+    .batch-btn:hover { background: #fb8c00; }
+    .modal-bg, .popup-bg { display: none; position: fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.32); z-index: 999; }
+    .modal, .popup { position: absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; border-radius:10px; box-shadow:0 4px 14px #0002; padding: 24px 14px 16px 14px; min-width:320px; max-width:95vw; }
+    .modal textarea { width: 100%; min-height: 110px; }
+    .modal label { font-weight: 600; }
+    .modal .close, .popup .close { position: absolute; right: 10px; top: 10px; background:none; border:none; color:#888; font-size:1.3em; cursor:pointer; }
+    .modal .modal-btns { margin-top: 10px; display: flex; gap: 10px;}
+    .popup-title { font-size:1.17em; font-weight:600; margin-bottom:8px; }
+    .popup-list { max-height:260px; overflow:auto; font-size:1em; margin-bottom:10px;}
+    .popup-list table { background: #fff; }
+    .inout-cell { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .inout-row { display:flex; gap:2px; margin-bottom:2px;}
+    .inout-row > input, .inout-row > textarea { width:auto; }
+    .inout-note { width:80px; }
+    .force-export-bg { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.32); z-index: 2000; }
+    .force-export-modal { position: absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; border-radius:10px; box-shadow:0 4px 14px #0002; padding: 26px 20px 24px 20px; min-width:330px; max-width:95vw; }
+    .force-export-modal .btn { background:#2874a6; color:#fff; border:none; border-radius:4px; padding:8px 32px; font-weight:600; margin:8px 6px 0 6px;}
+    .force-export-modal .btn:disabled { background:#bbb; color:#fff;}
+    #deletePwdModalBg .modal { min-width:320px; max-width:95vw; }
+    #deletePwdInput { font-size:1.12em; letter-spacing:2px; text-align:center; margin-bottom:10px; }
+    #deletePwdMsg { min-height:1.5em; }
+    .sku-filter-select { width: 100%; min-width: 90px; max-width:120px; font-size:1em; border-radius:6px; border:1px solid #bbb; padding:3px 6px; }
+    @media (max-width: 900px) {
+      .container { padding: 7px 2px; }
+      .flex-row { flex-direction: column; gap: 4px;}
+      th, td { font-size: 0.95em; padding: 5px 2px;}
+      .tab-btns { flex-direction: column; }
+      .modal, .popup { min-width: 90vw; }
+      .inout-cell { flex-direction:column; }
+      .inout-note { width: 65px; }
+      .force-export-modal { min-width: 90vw; }
+      #deletePwdModalBg .modal { min-width: 90vw; }
+      .sku-filter-select { max-width: 99vw; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>庫存記錄表</h1>
+    <div class="tab-btns">
+      <button id="tab-product" class="tab-btn active" onclick="switchTab('product')">庫存總覽</button>
+      <button id="tab-detail" class="tab-btn" onclick="switchTab('detail')">出入庫明細</button>
+    </div>
+    <div class="tab-content active" id="tab-product-content">
+      <form id="productForm" class="flex-row" autocomplete="off">
+        <div class="flex-col">
+          <label for="productSKU">SKU / 品牌</label>
+          <input type="text" id="productSKU" placeholder="如：A123">
+        </div>
+        <div class="flex-col">
+          <label for="productName">產品名稱 <span style="color:#c0392b">*</span></label>
+          <input type="text" id="productName" required placeholder="如：蘋果">
+        </div>
+        <div class="flex-col">
+          <label for="productParam">產品參數</label>
+          <input type="text" id="productParam" placeholder="如：紅色, 1kg, 進口">
+        </div>
+        <div class="flex-col">
+          <label for="safeStock">安全庫存線</label>
+          <input type="number" id="safeStock" min="0" value="5">
+        </div>
+        <div class="flex-col" style="flex-basis:120px;">
+          <button type="submit" style="margin-top:21px;">新增產品</button>
+        </div>
+        <div class="flex-col" style="flex-basis:120px;">
+          <button type="button" class="batch-btn" onclick="showBatchModal()">批量導入</button>
+        </div>
+      </form>
+      <div style="margin-bottom: 14px;">
+        <button class="export-btn" onclick="exportAllToExcel()">匯出所有庫存明細 (Excel)</button>
+        <label style="display:inline-block; margin-left:8px;">
+          <input type="file" id="importFileInput" accept=".xlsx" style="display:none;" onchange="importFromExcel(event)">
+          <button type="button" class="import-btn" onclick="document.getElementById('importFileInput').click()">匯入備份 Excel</button>
+        </label>
+        <label style="display:inline-block; margin-left:8px;">
+          <input type="file" id="mergeFileInput" accept=".xlsx" style="display:none;" onchange="importAndMergeFromExcel(event)">
+          <button type="button" class="import-btn merge" onclick="document.getElementById('mergeFileInput').click()">合併匯入 Excel</button>
+        </label>
+        <span style="color:#888;font-size:0.97em;margin-left:10px;">
+          <span style="color:#d67b00;">
+            「合併匯入」會將Excel資料與本機現有資料合併（明細去重複，庫存自動重算）<br>
+            <b>＊兩台電腦互傳可用此功能！</b>
+          </span>
+        </span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>產品編號</th>
+            <th>SKU / 品牌</th>
+            <th>產品</th>
+            <th>產品參數</th>
+            <th>現有庫存</th>
+            <th>安全庫存線</th>
+            <th style="width:120px;">30天出貨日均值</th>
+            <th>入貨 (+)</th>
+            <th>出貨 (-)</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="productTableBody"></tbody>
+      </table>
+      <small style="color:#888;">* 紅色=低於安全線，黃色=低於日均出貨量建議備貨<br>
+      * 若安全線低於日均出貨，建議提高安全線設定</small>
+    </div>
+    <div class="tab-content" id="tab-detail-content">
+      <div id="detail-filter-bar" style="margin-bottom:8px;"></div>
+      <button class="export-btn" onclick="exportDetailsToCSV()">匯出出入庫明細 (CSV)</button>
+      <table>
+        <thead>
+          <tr>
+            <th>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <span>SKU / 品牌</span>
+                <select id="skuFilterSelect" class="sku-filter-select" onchange="onSkuSelectChange()">
+                  <option value="">全部</option>
+                </select>
+              </div>
+            </th>
+            <th>產品</th>
+            <th>產品參數</th>
+            <th>日期時間</th>
+            <th>類型</th>
+            <th>數量</th>
+            <th>備註</th>
+            <th>結存</th>
+          </tr>
+        </thead>
+        <tbody id="detailTableBody"></tbody>
+      </table>
+      <small style="color:#888;">* 明細會自動記錄每次入庫/出庫</small>
+    </div>
+  </div>
+  <div class="modal-bg" id="batchModalBg">
+    <div class="modal">
+      <button class="close" onclick="hideBatchModal()">×</button>
+      <label>批量導入（每行格式：SKU / 品牌,產品名稱,產品參數,現有庫存,安全庫存線）</label>
+      <textarea id="batchInput" placeholder="如：&#10;ABC001,蘋果,紅色,5,10&#10;,香蕉,,黃,8"></textarea>
+      <div style="color:#888;font-size:0.95em; margin-top:2px;">
+        * SKU / 品牌、產品參數 可空白，現有庫存/安全庫存線不填自動為0/5。<br>
+        * 舊格式三~四欄(不含現有庫存/產品參數)亦支援。
+      </div>
+      <div class="modal-btns">
+        <button onclick="doBatchImport()">確認導入</button>
+        <button onclick="hideBatchModal()">取消</button>
+      </div>
+    </div>
+  </div>
+  <div class="popup-bg" id="lowStockPopupBg">
+    <div class="popup">
+      <button class="close" onclick="hideLowStockPopup()">×</button>
+      <div class="popup-title">⚠️ 低庫存/建議備貨產品</div>
+      <div class="popup-list" id="lowStockPopupList"></div>
+      <div style="text-align:center;">
+        <button onclick="hideLowStockPopup()" style="padding:5px 20px;background:#27ae60;color:#fff;border:none;border-radius:4px;">知道了</button>
+      </div>
+    </div>
+  </div>
+  <div class="force-export-bg" id="forceExportBg">
+    <div class="force-export-modal">
+      <div style="font-size:1.2em; font-weight:600; margin-bottom:10px;">⚠️ 關閉前自動匯出</div>
+      <div style="margin-bottom:16px;">已自動匯出所有庫存明細 Excel 檔案<br>請檢查已下載的檔案。</div>
+      <div style="text-align:center;">
+        <button class="btn" onclick="forceClosePage()">確認已備份，關閉頁面</button>
+        <button class="btn" onclick="retryExportAll()">重新下載</button>
+        <button class="btn" onclick="backToPage()">返回頁面</button>
+      </div>
+      <div style="color:#888;font-size:0.98em;margin-top:10px;">如自動下載失敗，請點「重新下載」或「返回頁面」手動備份。</div>
+    </div>
+  </div>
+  <div class="modal-bg" id="deletePwdModalBg">
+    <div class="modal">
+      <button class="close" onclick="hideDeletePwdModal()">×</button>
+      <div style="font-size:1.09em;font-weight:600;margin-bottom:10px;">請輸入刪除密碼進行確認</div>
+      <input type="password" id="deletePwdInput" placeholder="請輸入密碼">
+      <div id="deletePwdMsg" style="color:#c0392b;font-size:0.98em;min-height:1.4em;"></div>
+      <div class="modal-btns">
+        <button onclick="doDeleteProduct()">確認刪除</button>
+        <button onclick="hideDeletePwdModal()">取消</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // ========== 資料結構 ==========
+    function getProducts() {
+      // 保證每個產品有 productId, param
+      let ps = JSON.parse(localStorage.getItem('inventory_products') || '[]');
+      let id = 1;
+      ps.forEach(p => {
+        if (!p.productId) p.productId = id;
+        if (p.param === undefined) p.param = "";
+        id++;
+      });
+      // 重新依 productId 排序
+      ps.sort((a, b) => a.productId - b.productId);
+      return ps;
+    }
+    function saveProducts(products) {
+      // 重新分配順序編號（自動流水號，連續無缺）
+      products.forEach((p,i)=>{p.productId = i+1; if(p.param===undefined) p.param="";});
+      localStorage.setItem('inventory_products', JSON.stringify(products));
+    }
+    function getDetails() {
+      return JSON.parse(localStorage.getItem('inventory_details') || '[]');
+    }
+    function saveDetails(details) {
+      localStorage.setItem('inventory_details', JSON.stringify(details));
+    }
+
+    // ========== 匯入備份 Excel（覆蓋） ==========
+    function importFromExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = evt.target.result;
+          const workbook = XLSX.read(data, {type: 'binary'});
+          const productSheet = workbook.Sheets['貨品清單'];
+          const detailSheet = workbook.Sheets['出入庫明細'];
+          if(!productSheet || !detailSheet) {
+            alert("Excel 格式不正確，請確認分頁名稱");
+            return;
+          }
+          const productData = XLSX.utils.sheet_to_json(productSheet, {header:1});
+          const detailData = XLSX.utils.sheet_to_json(detailSheet, {header:1});
+          let products = [];
+          for(let i=1; i<productData.length; i++){
+            const row = productData[i];
+            if(!row || row.length<4) continue;
+            products.push({
+              productId: i,
+              sku: row[0]||'',
+              name: row[1]||'',
+              param: row[2]||'',
+              stock: Number(row[3])||0,
+              safeStock: Number(row[4])||5
+            });
+          }
+          let details = [];
+          for(let i=1; i<detailData.length; i++){
+            const row = detailData[i];
+            if(!row || row.length<8) continue;
+            details.push({
+              sku: row[0]||'',
+              name: row[1]||'',
+              param: row[2]||'',
+              date: row[3]||'',
+              type: row[4]=='入庫'?'in':'out',
+              qty: Number(row[5])||0,
+              note: row[6]||''
+            });
+          }
+          if(!products.length) {
+            alert("Excel 內未找到產品資料！");
+            return;
+          }
+          saveProducts(products);
+          saveDetails(details);
+          alert("匯入成功！即將重新整理頁面！");
+          location.reload();
+        } catch (err) {
+          alert("匯入失敗：" + err);
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
+    // ========== 合併匯入 Excel ==========
+    function importAndMergeFromExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = evt.target.result;
+          const workbook = XLSX.read(data, {type: 'binary'});
+          const productSheet = workbook.Sheets['貨品清單'];
+          const detailSheet = workbook.Sheets['出入庫明細'];
+          if(!productSheet || !detailSheet) {
+            alert("Excel 格式不正確，請確認分頁名稱");
+            return;
+          }
+          const productData = XLSX.utils.sheet_to_json(productSheet, {header:1});
+          const detailData = XLSX.utils.sheet_to_json(detailSheet, {header:1});
+          let importProducts = [];
+          for(let i=1; i<productData.length; i++){
+            const row = productData[i];
+            if(!row || row.length<4) continue;
+            importProducts.push({
+              productId: null,
+              sku: row[0]||'',
+              name: row[1]||'',
+              param: row[2]||'',
+              stock: Number(row[3])||0,
+              safeStock: Number(row[4])||5
+            });
+          }
+          let importDetails = [];
+          for(let i=1; i<detailData.length; i++){
+            const row = detailData[i];
+            if(!row || row.length<8) continue;
+            importDetails.push({
+              sku: row[0]||'',
+              name: row[1]||'',
+              param: row[2]||'',
+              date: row[3]||'',
+              type: row[4]=='入庫'?'in':'out',
+              qty: Number(row[5])||0,
+              note: row[6]||''
+            });
+          }
+          let products = getProducts();
+          let details = getDetails();
+          // 產品合併（sku+name+param 唯一）
+          const productKey = p => (p.sku + '|' + p.name + '|' + (p.param||''));
+          let productMap = {};
+          products.forEach(p=>{ productMap[productKey(p)] = {...p}; });
+          importProducts.forEach(p=>{
+            let key = productKey(p);
+            if(!productMap[key]) productMap[key] = {...p};
+            else {
+              if(p.safeStock > productMap[key].safeStock) productMap[key].safeStock = p.safeStock;
+              if(!productMap[key].name && p.name) productMap[key].name = p.name;
+              if(!productMap[key].param && p.param) productMap[key].param = p.param;
+            }
+          });
+          let mergedProducts = Object.values(productMap);
+          // 明細合併
+          let detailKey = d => [d.sku||'', d.name||'', d.param||'', d.date||'', d.type||'', d.qty||'', d.note||''].join('|');
+          let detailSet = {};
+          details.forEach(d=>{ detailSet[detailKey(d)] = true; });
+          importDetails.forEach(d=>{
+            let k = detailKey(d);
+            if(!detailSet[k]) { details.push(d); detailSet[k]=true; }
+          });
+          details.sort((a,b)=>new Date(a.date.replace(/-/g,'/')) - new Date(b.date.replace(/-/g,'/')));
+          // 重新計算庫存
+          let stockMap = {};
+          details.forEach(d=>{
+            let key = d.sku + '|' + d.name + '|' + (d.param||'');
+            if(!(key in stockMap)) stockMap[key]=0;
+            if(d.type==='in') stockMap[key] += d.qty;
+            else if(d.type==='out') stockMap[key] -= d.qty;
+          });
+          mergedProducts.forEach(p=>{
+            let key = p.sku + '|' + p.name + '|' + (p.param||'');
+            p.stock = stockMap[key]||0;
+          });
+          saveProducts(mergedProducts);
+          saveDetails(details);
+          alert("合併匯入成功！資料已合併，將重新整理頁面。");
+          location.reload();
+        } catch (err) {
+          alert("合併匯入失敗：" + err);
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
+    // ========== 其餘程式碼全部保留 ==========
+    let detailFilterSKU = "";
+    function switchTab(tab) {
+      document.getElementById('tab-product').classList.toggle('active', tab === 'product');
+      document.getElementById('tab-detail').classList.toggle('active', tab === 'detail');
+      document.getElementById('tab-product-content').classList.toggle('active', tab === 'product');
+      document.getElementById('tab-detail-content').classList.toggle('active', tab === 'detail');
+      if(tab === 'detail') renderDetailTable();
+      else renderTable();
+    }
+    function updateSkuSelectOptions() {
+      const skuSet = new Set();
+      getDetails().forEach(d => skuSet.add(d.sku));
+      getProducts().forEach(p => skuSet.add(p.sku));
+      const skuArr = Array.from(skuSet).sort();
+      const select = document.getElementById('skuFilterSelect');
+      const prev = select.value;
+      select.innerHTML = `<option value="">全部</option>` + skuArr.map(sku=>`<option value="${sku}">${sku}</option>`).join('');
+      select.value = prev && skuArr.includes(prev) ? prev : "";
+    }
+    function onSkuSelectChange() {
+      const val = document.getElementById('skuFilterSelect').value;
+      detailFilterSKU = val;
+      renderDetailTable();
+    }
+    function get30DayAvgOut(sku) {
+      const details = getDetails();
+      const now = new Date();
+      const last30 = [];
+      details.forEach(d => {
+        if (d.sku !== sku || d.type !== 'out') return;
+        const t = new Date(d.date.replace(/-/g,'/'));
+        if ((now - t) / (1000 * 60 * 60 * 24) <= 30) {
+          last30.push({ date: t, qty: Number(d.qty) });
+        }
+      });
+      if (last30.length === 0) return 0;
+      const daily = {};
+      last30.forEach(e => {
+        const day = e.date.toISOString().slice(0,10);
+        daily[day] = (daily[day]||0) + e.qty;
+      });
+      const days = Object.keys(daily).length;
+      if (days === 0) return 0;
+      const total = Object.values(daily).reduce((a,b)=>a+b,0);
+      return +(total/days).toFixed(2);
+    }
+    function renderTable() {
+      const tbody = document.getElementById('productTableBody');
+      const products = getProducts();
+      tbody.innerHTML = '';
+      products.forEach((p, idx) => {
+        const avgOut = get30DayAvgOut(p.sku);
+        let trClass = '';
+        let tip = '';
+        if (p.stock < p.safeStock) {
+          trClass = 'danger';
+          tip = '低於安全線';
+        } else if (avgOut > 0 && p.stock < avgOut) {
+          trClass = 'warn';
+          tip = '低於30天出貨日均值';
+        }
+        let suggest = '';
+        if (avgOut > 0 && p.safeStock < avgOut) {
+          suggest = '<div style="color:#c0392b;font-size:0.93em;">⚠ 建議安全線 ≥' + avgOut + '</div>';
+        }
+        let inoutInputHTML = function(type, idx) {
+          return `
+            <div class="inout-cell">
+              <div class="inout-row">
+                <input style="width:60px;" type="number" min="1" placeholder="數量" id="${type}-${idx}">
+              </div>
+              <div class="inout-row">
+                <input class="inout-note" type="text" placeholder="備註" id="${type}note-${idx}" maxlength="20">
+                <button onclick="${type==='in'?'stockIn':'stockOut'}(${idx})">${type==='in'?'入貨':'出貨'}</button>
+              </div>
+            </div>
+          `;
+        }
+        let tr = document.createElement('tr');
+        tr.className = trClass;
+        tr.innerHTML = `
+          <td>${p.productId||idx+1}</td>
+          <td><span class="link" onclick="goDetailBySKU('${p.sku}')">${p.sku||''}</span></td>
+          <td><span class="link" onclick="goDetailBySKU('${p.sku}')">${p.name}</span></td>
+          <td>${p.param||''}</td>
+          <td>${p.stock}${tip?'<br/><span style="font-size:0.9em;color:#c0392b">'+tip+'</span>':''}</td>
+          <td>${p.safeStock}${suggest}</td>
+          <td>${avgOut || '-'}</td>
+          <td>${inoutInputHTML('in', idx)}</td>
+          <td>${inoutInputHTML('out', idx)}</td>
+          <td>
+            <button class="remove-btn" onclick="removeProduct(${idx})">刪除</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    function renderDetailTable() {
+      updateSkuSelectOptions();
+      const tbody = document.getElementById('detailTableBody');
+      const details = getDetails();
+      let filtered = details;
+      if (detailFilterSKU) {
+        filtered = details.filter(d => d.sku === detailFilterSKU);
+      }
+      tbody.innerHTML = '';
+      const skuGroups = {};
+      details.forEach(d => {
+        if (!skuGroups[d.sku]) skuGroups[d.sku] = [];
+        skuGroups[d.sku].push(d);
+      });
+      Object.keys(skuGroups).forEach(sku => {
+        skuGroups[sku].sort((a, b) => new Date(a.date.replace(/-/g,'/')) - new Date(b.date.replace(/-/g,'/')));
+      });
+      const balanceMap = {};
+      Object.keys(skuGroups).forEach(sku => {
+        let bal = 0;
+        skuGroups[sku].forEach(d => {
+          if (d.type === "in") bal += Number(d.qty);
+          else bal -= Number(d.qty);
+          const idx = details.indexOf(d);
+          balanceMap[idx] = bal;
+        });
+      });
+      filtered.slice().reverse().forEach((d, i) => {
+        const idx = details.indexOf(d);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.sku||''}</td>
+          <td>${d.name}</td>
+          <td>${d.param||''}</td>
+          <td>${d.date}</td>
+          <td>${d.type == 'in' ? '入庫' : '出庫'}</td>
+          <td>${d.qty}</td>
+          <td>${d.note || ''}</td>
+          <td>${balanceMap[idx]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('productForm').onsubmit = function(e) {
+      e.preventDefault();
+      const sku = document.getElementById('productSKU').value.trim();
+      const name = document.getElementById('productName').value.trim();
+      const param = document.getElementById('productParam').value.trim();
+      let safeStock = parseInt(document.getElementById('safeStock').value, 10);
+      if (!name) return alert("請輸入產品名稱");
+      if (isNaN(safeStock)) safeStock = 5;
+      const products = getProducts();
+      if (sku && products.some(p => p.sku === sku)) return alert("已有同 SKU 產品");
+      const productId = products.length ? Math.max(...products.map(p=>p.productId||0))+1 : 1;
+      products.push({ productId, sku, name, param, stock: 0, safeStock });
+      saveProducts(products);
+      renderTable();
+      this.reset();
+      document.getElementById('safeStock').value = 5;
+    };
+    function showBatchModal() {document.getElementById('batchModalBg').style.display = 'block';document.getElementById('batchInput').value = '';}
+    function hideBatchModal() {document.getElementById('batchModalBg').style.display = 'none';}
+    function doBatchImport() {
+      const text = document.getElementById('batchInput').value;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+      if (lines.length === 0) { alert('請輸入資料'); return; }
+      let products = getProducts(); let errors = []; let imported = 0;
+      let maxId = products.length ? Math.max(...products.map(p=>p.productId||0)) : 0;
+      lines.forEach((line, i) => {
+        const parts = line.split(',');
+        const sku = (parts[0]||'').trim();
+        const name = (parts[1]||'').trim();
+        let param = '', stock = 0, safeStock = 5;
+        if(parts.length >= 5){ // 新格式
+          param = (parts[2]||'').trim();
+          stock = parts[3] !== undefined && parts[3] !== '' ? parseInt(parts[3].trim(), 10) : 0;
+          safeStock = parts[4] !== undefined && parts[4] !== '' ? parseInt(parts[4].trim(), 10) : 5;
+        }else if(parts.length == 4){ // 無產品參數格式
+          param = '';
+          stock = parts[2] !== undefined && parts[2] !== '' ? parseInt(parts[2].trim(), 10) : 0;
+          safeStock = parts[3] !== undefined && parts[3] !== '' ? parseInt(parts[3].trim(), 10) : 5;
+        }else if(parts.length == 3){ // 舊格式
+          param = '';
+          stock = 0;
+          safeStock = parts[2] !== undefined ? parseInt(parts[2].trim(), 10) : 5;
+        }else{
+          errors.push(`第${i+1}行格式不正確`);
+          return;
+        }
+        if (!name) { errors.push(`第${i+1}行缺少產品名稱`); return; }
+        if (isNaN(stock)) stock = 0;
+        if (isNaN(safeStock)) safeStock = 5;
+        if (sku && products.some(p => p.sku === sku)) { errors.push(`第${i+1}行SKU重複`); return; }
+        maxId++;
+        products.push({ productId: maxId, sku, name, param, stock, safeStock }); imported++;
+      });
+      saveProducts(products); renderTable(); hideBatchModal();
+      if (errors.length) alert('完成但有錯誤：\n' + errors.join('\n'));
+      else alert(`成功導入 ${imported} 項產品`);
+    }
+    window.stockIn = function(idx) {
+      const input = document.getElementById(`in-${idx}`);
+      const noteInput = document.getElementById(`innote-${idx}`);
+      const qty = parseInt(input.value, 10);
+      const note = noteInput.value.trim();
+      const products = getProducts();
+      if (!qty || qty <= 0) return alert("請輸入正確入貨數量");
+      const confirmMsg = `確定要為【${products[idx].name}】(SKU:${products[idx].sku||'無'}) 入庫 ${qty} 件？${note?('\n備註：'+note):''}`;
+      if (!window.confirm(confirmMsg)) return;
+      products[idx].stock += qty;
+      saveProducts(products);
+      const p = products[idx];
+      const details = getDetails();
+      details.push({ date: getNow(), sku: p.sku, name: p.name, param: p.param||'', type: 'in', qty: qty, note: note });
+      saveDetails(details);
+      renderTable();
+      input.value = ''; noteInput.value = '';
+    }
+    window.stockOut = function(idx) {
+      const input = document.getElementById(`out-${idx}`);
+      const noteInput = document.getElementById(`outnote-${idx}`);
+      const qty = parseInt(input.value, 10);
+      const note = noteInput.value.trim();
+      const products = getProducts();
+      if (!qty || qty <= 0) return alert("請輸入正確出貨數量");
+      if (products[idx].stock < qty) return alert("庫存不足，不能出貨");
+      const confirmMsg = `確定要為【${products[idx].name}】(SKU:${products[idx].sku||'無'}) 出庫 ${qty} 件？${note?('\n備註：'+note):''}`;
+      if (!window.confirm(confirmMsg)) return;
+      products[idx].stock -= qty;
+      saveProducts(products);
+      const p = products[idx];
+      const details = getDetails();
+      details.push({ date: getNow(), sku: p.sku, name: p.name, param: p.param||'', type: 'out', qty: qty, note: note });
+      saveDetails(details);
+      renderTable();
+      input.value = ''; noteInput.value = '';
+    }
+    let DELETE_PASSWORD = "123456"; let toDeleteIdx = null;
+    window.removeProduct = function(idx) {
+      toDeleteIdx = idx;
+      document.getElementById('deletePwdInput').value = '';
+      document.getElementById('deletePwdMsg').textContent = '';
+      document.getElementById('deletePwdModalBg').style.display = 'block';
+      setTimeout(() => document.getElementById('deletePwdInput').focus(), 50);
+    };
+    function doDeleteProduct() {
+      const pwd = document.getElementById('deletePwdInput').value;
+      if (pwd !== DELETE_PASSWORD) {
+        document.getElementById('deletePwdMsg').textContent = "密碼錯誤，請重試！";
+        document.getElementById('deletePwdInput').focus();
+        return;
+      }
+      let products = getProducts();
+      if (toDeleteIdx != null && products[toDeleteIdx]) {
+        products.splice(toDeleteIdx, 1);
+        saveProducts(products);
+        renderTable();
+      }
+      hideDeletePwdModal();
+      toDeleteIdx = null;
+    }
+    function hideDeletePwdModal() {
+      document.getElementById('deletePwdModalBg').style.display = 'none';
+      document.getElementById('deletePwdMsg').textContent = '';
+      toDeleteIdx = null;
+    }
+    function exportAllToExcel(autoDownloadForClose=false) {
+      const products = getProducts();
+      const details = getDetails();
+      const productSheet = [
+        ['產品編號','SKU','產品名稱','產品參數','現有庫存','安全庫存線'],
+        ...products.map(p => [p.productId, p.sku, p.name, p.param||'', p.stock, p.safeStock])
+      ];
+      // ====== 結存計算 ======
+      const skuGroups = {};
+      details.forEach(d => {
+        if (!skuGroups[d.sku]) skuGroups[d.sku] = [];
+        skuGroups[d.sku].push(d);
+      });
+      Object.keys(skuGroups).forEach(sku => {
+        skuGroups[sku].sort((a, b) => new Date(a.date.replace(/-/g,'/')) - new Date(b.date.replace(/-/g,'/')));
+      });
+      const balanceMap = {};
+      Object.keys(skuGroups).forEach(sku => {
+        let bal = 0;
+        skuGroups[sku].forEach(d => {
+          if (d.type === "in") bal += Number(d.qty);
+          else bal -= Number(d.qty);
+          const idx = details.indexOf(d);
+          balanceMap[idx] = bal;
+        });
+      });
+      const detailSheet = [
+        ['SKU','產品名稱','產品參數','日期時間','類型','數量','備註','結存'],
+        ...details.map((d, idx) =>
+          [d.sku, d.name, d.param||'', d.date, d.type=='in'?'入庫':'出庫', d.qty, d.note||'', balanceMap[idx]]
+        )
+      ];
+      let now = new Date();
+      let y = now.getFullYear();
+      let m = String(now.getMonth()+1).padStart(2,'0');
+      let d = String(now.getDate()).padStart(2,'0');
+      let hh = String(now.getHours()).padStart(2,'0');
+      let mm = String(now.getMinutes()).padStart(2,'0');
+      let ss = String(now.getSeconds()).padStart(2,'0');
+      let timeTag = `${y}${m}${d}_${hh}${mm}${ss}`;
+      let fname = (autoDownloadForClose ? '_庫存記錄自動備份_' : '') + `庫存記錄_${timeTag}.xlsx`;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(productSheet), "貨品清單");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailSheet), "出入庫明細");
+      XLSX.writeFile(wb, fname);
+      if(autoDownloadForClose) setTimeout(showForceExportModal, 350);
+    }
+    function retryExportAll() { exportAllToExcel(true); }
+    function exportDetailsToCSV() {
+      const details = getDetails();
+      const skuGroups = {};
+      details.forEach(d => {
+        if (!skuGroups[d.sku]) skuGroups[d.sku] = [];
+        skuGroups[d.sku].push(d);
+      });
+      Object.keys(skuGroups).forEach(sku => {
+        skuGroups[sku].sort((a, b) => new Date(a.date.replace(/-/g,'/')) - new Date(b.date.replace(/-/g,'/')));
+      });
+      const balanceMap = {};
+      Object.keys(skuGroups).forEach(sku => {
+        let bal = 0;
+        skuGroups[sku].forEach(d => {
+          if (d.type === "in") bal += Number(d.qty);
+          else bal -= Number(d.qty);
+          const idx = details.indexOf(d);
+          balanceMap[idx] = bal;
+        });
+      });
+      let csv = 'SKU,產品名稱,產品參數,日期時間,類型,數量,備註,結存\n';
+      details.forEach((d, idx)=>{
+        csv += `"${d.sku}","${d.name}","${d.param||''}","${d.date}",${d.type=='in'?"入庫":"出庫"},${d.qty},"${d.note||''}",${balanceMap[idx]}\n`
+      });
+      downloadCSV(csv, '出入庫明細.csv');
+    }
+    function downloadCSV(csv, filename, forAutoExport=false) {
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      if(forAutoExport) {
+        setTimeout(()=>showForceExportModal(), 350);
+      }
+    }
+    function getNow() {
+      const d = new Date();
+      return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0') + ' ' +
+        String(d.getHours()).padStart(2,'0') + ':' +
+        String(d.getMinutes()).padStart(2,'0') + ':' +
+        String(d.getSeconds()).padStart(2,'0');
+    }
+    window.goDetailBySKU = function(sku) {
+      detailFilterSKU = sku;
+      renderDetailTable();
+      document.getElementById('skuFilterSelect').value = sku;
+      document.getElementById('tab-detail').click();
+    }
+    function showLowStockPopup() {
+      const products = getProducts();
+      let html = '';
+      let any = false;
+      html += `<table><tr><th>SKU</th><th>產品</th><th>現庫存</th><th>安全線</th><th>30天出貨日均</th><th>狀態</th></tr>`;
+      products.forEach(p=>{
+        const avgOut = get30DayAvgOut(p.sku);
+        let status = ''; let color = '';
+        if (p.stock < p.safeStock) {status = '庫存低於安全線';color = '#c0392b';any = true;}
+        else if (avgOut > 0 && p.stock < avgOut) {status = '庫存低於日均出貨量';color = '#d48400';any = true;}
+        if (avgOut > 0 && p.safeStock < avgOut) {status += (status?', ':'') + '建議提高安全線';color = '#d48400';any = true;}
+        if (status) {html += `<tr style="color:${color};"><td>${p.sku||''}</td><td>${p.name}</td><td>${p.stock}</td><td>${p.safeStock}</td><td>${avgOut||'-'}</td><td>${status}</td></tr>`;}
+      });
+      html += '</table>';
+      if (!any) html = '<div style="color:#27ae60;text-align:center;font-size:1.1em; padding:18px;">全部貨品庫存充足</div>';
+      document.getElementById('lowStockPopupList').innerHTML = html;
+      document.getElementById('lowStockPopupBg').style.display = 'block';
+    }
+    function hideLowStockPopup() {document.getElementById('lowStockPopupBg').style.display = 'none';}
+    window.onload = function() {
+      renderTable();
+      setTimeout(showLowStockPopup, 200);
+      updateSkuSelectOptions();
+    }
+    let isForceExporting = false;
+    let canReallyClose = false;
+    window.onbeforeunload = function(e) {
+      if (canReallyClose) return;
+      const products = getProducts();
+      const details = getDetails();
+      if (isForceExporting || (!products.length && !details.length)) return;
+      isForceExporting = true;
+      exportAllToExcel(true);
+      showForceExportModal();
+      if (e) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+      return "";
+    }
+    function showForceExportModal() {
+      document.getElementById('forceExportBg').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function forceClosePage() {
+      canReallyClose = true;
+      document.getElementById('forceExportBg').style.display = 'none';
+      document.body.style.overflow = '';
+      window.onbeforeunload = null;
+      window.close();
+    }
+    function backToPage() {
+      isForceExporting = false;
+      document.getElementById('forceExportBg').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    window.doDeleteProduct = doDeleteProduct;
+    window.hideDeletePwdModal = hideDeletePwdModal;
+    window.switchTab = switchTab;
+    window.renderDetailTable = renderDetailTable;
+    window.showBatchModal = showBatchModal;
+    window.hideBatchModal = hideBatchModal;
+    window.doBatchImport = doBatchImport;
+    window.retryExportAll = retryExportAll;
+    window.backToPage = backToPage;
+    window.onSkuSelectChange = onSkuSelectChange;
+    window.clearDetailFilter = function() {
+      detailFilterSKU = "";
+      document.getElementById('skuFilterSelect').value = "";
+      renderDetailTable();
+    };
+  </script>
+</body>
+</html>
